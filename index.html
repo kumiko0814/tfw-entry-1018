@@ -299,9 +299,9 @@ footer{text-align:center; padding:28px 16px 80px; font-size:10.5px; color:var(--
 <div id="closed"><div class="card">
   <img class="chara" src="kumiko-pink-peace.webp?v=20260924a" alt="森川くみこのキャラクター" width="108" height="261">
   <div class="en">CLOSED</div>
-  <h2>受付を締め切りました</h2>
-  <p>たくさんのお申込み、ありがとうございました。<br>定員に達したため、お申込みの受付を<br>終了させていただきました。</p>
-  <p>ご不明な点は、このフォームのご案内が届いた<br>LINEにご返信ください☺️</p>
+  <h2 id="clH">受付を締め切りました</h2>
+  <p id="clP">たくさんのお申込み、ありがとうございました。<br>定員に達したため、お申込みの受付を<br>終了させていただきました。</p>
+  <p id="clP2">ご不明な点は、このフォームのご案内が届いた<br>LINEにご返信ください☺️</p>
 </div></div>
 
 <div id="done"><div class="card">
@@ -405,6 +405,13 @@ function send(payload){
       return jsonp(GAS+"?payload="+encodeURIComponent(JSON.stringify(payload)));
     });
 }
+function showAlready(){
+  $("clH").textContent="お申込みは受付済みです";
+  $("clP").innerHTML="このお名前では、すでにお申込みをいただいています。<br>ご記入ありがとうございました☺️";
+  $("clP2").innerHTML="人数などの変更は、このフォームのご案内が届いた<br>LINEにご返信ください";
+  $("closed").querySelector(".en").textContent="THANK YOU";
+  showClosed();
+}
 function showClosed(){
   $("formArea").style.display="none"; $("toast").classList.remove("on");
   $("closed").classList.add("on"); window.scrollTo(0,0);
@@ -428,6 +435,7 @@ $("submit").addEventListener("click",function(){
     companions:compValue(), agreeCancel:true, agreeJoin:true, question:$("f_q").value.trim(), ua:navigator.userAgent.slice(0,120)};
   send(d).then(function(r){
     if(r&&r.result==="full"){ showClosed(); return; }
+    if(r&&r.result==="already"){ try{ localStorage.removeItem(LS_DRAFT); }catch(e){} showAlready(); return; }
     if(r&&r.result==="over"){
       btn.disabled=false; btn.textContent="参加を確定する";
       toast("残りのお席が"+r.remaining+"名分です。人数を調整してお送りください");
@@ -455,6 +463,7 @@ try{
       comp=(dr.comp===undefined)?null:dr.comp; $("f_more").value=dr.more||""; }
     renderComp(); update();
     if(P.get("closed")==="1") showClosed();
+    else if(P.get("already")==="1") showAlready();
     else if(!demo) jsonp(GAS+"?action=status").then(function(r){ if(r&&r.result==="ok"&&r.open===false) showClosed(); }).catch(function(){});
   }
 }catch(e){ if(window.__log) window.__log("boot: "+e); }
