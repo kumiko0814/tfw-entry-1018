@@ -62,6 +62,11 @@ h1,h2,h3,p,label,b{word-break:auto-phrase;}
 .hero .chara{position:absolute; right:10px; bottom:-6px; width:100px;}
 .bubble{position:relative; margin-top:14px; margin-right:104px; background:var(--bg2); border:1px solid var(--line);
   border-radius:16px 16px 16px 4px; padding:11px 13px; font-size:12.5px; color:var(--plum2); line-height:1.9;}
+.remain{position:relative; display:inline-flex; align-items:baseline; gap:6px; margin-top:10px; padding:5px 12px; border-radius:999px;
+  background:#fff; border:1.5px solid var(--pink); font-size:11px; font-weight:800; color:var(--plum); visibility:hidden;}
+.remain.on{visibility:visible;}
+.remain b{font-size:18px; color:var(--pinkd); line-height:1;}
+.remain.wait{border-color:#b9a1dc; color:#7a62a3;}
 .bubble .from{display:block; font-size:10px; font-weight:800; color:var(--pinkd); margin-top:4px; text-align:right;}
 
 /* event info */
@@ -206,8 +211,9 @@ footer{text-align:center; padding:28px 16px 80px; font-size:10.5px; color:var(--
 
 <div class="hero"><div class="card">
   <div class="en">ENTRY FORM</div>
-  <h1><span>10月18日(日)</span><br><span>参加確定のお申込み</span></h1>
-  <div class="bubble">東京タワーでお会いできるのを、今からとっても楽しみにしています☺️ 下のフォームにご記入をお願いしますね。<span class="from">森川くみこ</span></div>
+  <h1><span>10月18日(日)</span><br><span id="h1b">参加確定のお申込み</span></h1>
+  <div class="remain" id="remain"></div>
+  <div class="bubble"><span id="bubT">東京タワーでお会いできるのを、今からとっても楽しみにしています☺️ 下のフォームにご記入をお願いしますね。</span><span class="from">森川くみこ</span></div>
   <img class="chara" src="kumiko-pink-peace.webp?v=20260924a" alt="森川くみこのキャラクター" width="100" height="241">
 </div></div>
 
@@ -271,7 +277,7 @@ footer{text-align:center; padding:28px 16px 80px; font-size:10.5px; color:var(--
   <label class="agree" id="a_join">
     <input type="checkbox" id="f_join">
     <span class="box"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.2 3L13 4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    <span class="tx"><span class="nw">10月18日(日)</span>のイベントに参加することを確定します</span>
+    <span class="tx" id="joinT"><span class="nw">10月18日(日)</span>のイベントに参加することを確定します</span>
   </label>
 </section>
 
@@ -304,8 +310,8 @@ footer{text-align:center; padding:28px 16px 80px; font-size:10.5px; color:var(--
 <div id="done"><div class="card">
   <img class="chara" src="kumiko-pink-peace.webp?v=20260924a" alt="森川くみこのキャラクター" width="118" height="285">
   <div class="en">THANK YOU</div>
-  <h2>お申込みを受け付けました✨</h2>
-  <p>ご記入ありがとうございました。<br>当日お会いできるのを楽しみにしています。</p>
+  <h2 id="dnH">お申込みを受け付けました✨</h2>
+  <p id="dnP">ご記入ありがとうございました。<br>当日お会いできるのを楽しみにしています。</p>
   <span class="datebadge">10月18日(日) 東京タワー</span>
   <dl class="sum" id="sum"></dl>
   <p style="font-size:11px;color:var(--sub)">内容を変更したいときは、ご案内が届いたLINEにご連絡ください</p>
@@ -402,6 +408,27 @@ function send(payload){
       return jsonp(GAS+"?payload="+encodeURIComponent(JSON.stringify(payload)));
     });
 }
+/* ===== 受付モード（main=本申込 / wait=キャンセル待ち） ===== */
+var mode="main";
+function setMode(m, remaining){
+  mode=m; var R=$("remain");
+  if(m==="wait"){
+    R.className="remain wait on"; R.textContent="ただいまキャンセル待ちで受付中";
+    $("h1b").textContent="キャンセル待ちのお申込み";
+    document.querySelector(".hud .who").textContent="キャンセル待ち申込書";
+    $("bubT").textContent="たくさんのお申込み、ありがとうございます。定員に達したため、ここからはキャンセル待ちでの受付です。お席が空いた場合は、LINEでご連絡しますね☺️";
+    $("joinT").innerHTML='お席が空いた場合、<span class="nw">10月18日(日)</span>のイベントに参加します';
+    $("submit").textContent="キャンセル待ちで申し込む";
+  }else if(typeof remaining==="number"){
+    R.className="remain on"; R.innerHTML="お申込み枠 残り<b>"+remaining+"</b>名";
+  }
+}
+function doneText(m){
+  if(m==="wait"){
+    $("dnH").textContent="キャンセル待ちで受け付けました";
+    $("dnP").innerHTML="ご記入ありがとうございました。<br>お席が空いた場合は、LINEでご連絡しますね。";
+  }
+}
 function showAlready(){
   $("clH").textContent="お申込みは受付済みです";
   $("clP").innerHTML="このお名前では、すでにお申込みをいただいています。<br>ご記入ありがとうございました☺️";
@@ -414,6 +441,7 @@ function showClosed(){
   $("closed").classList.add("on"); window.scrollTo(0,0);
 }
 function showDone(d){
+  doneText(d.mode);
   $("formArea").style.display="none"; $("toast").classList.remove("on");
   var rows=[["フルネーム",d.name],["LINE名",d.lineName],["ご住所",d.address],["同行者",d.companions+"人（合計"+(d.companions+1)+"名）"]];
   if(d.question) rows.push(["ご質問",d.question]);
@@ -427,24 +455,19 @@ $("submit").addEventListener("click",function(){
   if(!a[4]){ $("a_cancel").classList.add("ng"); first=first||$("a_cancel"); }
   if(!a[5]){ $("a_join").classList.add("ng"); first=first||$("a_join"); }
   if(first){ toast("あと少しです。色のついた項目をご確認ください"); first.scrollIntoView({behavior:"smooth",block:"center"}); return; }
-  var btn=this; btn.disabled=true; btn.textContent="送信しています…";
+  var btn=this, label=btn.textContent; btn.disabled=true; btn.textContent="送信しています…";
   var d={action:"submit", sid:sid(), name:val("f_name"), lineName:val("f_line"), address:val("f_addr"),
     companions:compValue(), agreeCancel:true, agreeJoin:true, question:$("f_q").value.trim(), ua:navigator.userAgent.slice(0,120)};
   send(d).then(function(r){
     if(r&&r.result==="full"){ showClosed(); return; }
     if(r&&r.result==="already"){ try{ localStorage.removeItem(LS_DRAFT); }catch(e){} showAlready(); return; }
-    if(r&&r.result==="over"){
-      btn.disabled=false; btn.textContent="参加を確定する";
-      toast("残りのお席が"+r.remaining+"名分です。人数を調整してお送りください");
-      $("q_comp").scrollIntoView({behavior:"smooth",block:"center"});
-      return;
-    }
     if(!r||r.result!=="ok") throw new Error((r&&r.message)||"error");
-    lsSet(LS_DONE,{name:d.name,lineName:d.lineName,address:d.address,companions:d.companions,question:d.question});
+    d.mode=(r.mode==="wait")?"wait":"main";
+    lsSet(LS_DONE,{name:d.name,lineName:d.lineName,address:d.address,companions:d.companions,question:d.question,mode:d.mode});
     try{ localStorage.removeItem(LS_DRAFT); }catch(e){}
     showDone(d);
   }).catch(function(err){
-    btn.disabled=false; btn.textContent="参加を確定する";
+    btn.disabled=false; btn.textContent=label;
     toast("送信できませんでした。電波の良い場所でもう一度お試しください");
     if(window.__log) window.__log("send error: "+err);
   });
@@ -461,7 +484,9 @@ try{
     renderComp(); update();
     if(P.get("closed")==="1") showClosed();
     else if(P.get("already")==="1") showAlready();
-    else if(!demo) jsonp(GAS+"?action=status").then(function(r){ if(r&&r.result==="ok"&&r.open===false) showClosed(); }).catch(function(){});
+    else if(P.get("wait")==="1") setMode("wait");
+    else if(demo) setMode("main",52);
+    else jsonp(GAS+"?action=status").then(function(r){ if(r&&r.result==="ok") setMode(r.mode==="wait"?"wait":"main", r.remaining); }).catch(function(){});
   }
 }catch(e){ if(window.__log) window.__log("boot: "+e); }
 
