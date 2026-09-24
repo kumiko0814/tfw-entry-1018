@@ -414,8 +414,8 @@ function setMode(m, remaining){
   mode=m; var R=$("remain");
   if(m==="wait"){
     R.className="remain wait on"; R.textContent="ただいまキャンセル待ちで受付中";
-    $("h1b").textContent="キャンセル待ちのお申込み";
-    document.querySelector(".hud .who").textContent="キャンセル待ち申込書";
+    $("h1b").textContent="キャンセル待ち受付";
+    document.querySelector(".hud .who").textContent="キャンセル待ち";
     $("bubT").textContent="たくさんのお申込み、ありがとうございます。定員に達したため、ここからはキャンセル待ちでの受付です。お席が空いた場合は、LINEでご連絡しますね☺️";
     $("joinT").innerHTML='お席が空いた場合、<span class="nw">10月18日(日)</span>のイベントに参加します';
     $("submit").textContent="キャンセル待ちで申し込む";
