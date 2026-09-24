@@ -147,8 +147,13 @@ section{padding:18px 16px 0;}
 .help b{color:var(--plum2);}
 
 /* done */
-#done{display:none; padding:18px 16px 0;}
-#done.on{display:block;}
+#done,#closed{display:none; padding:18px 16px 0;}
+#done.on,#closed.on{display:block;}
+#closed .card{text-align:center; padding:26px 18px 22px;}
+#closed .chara{width:108px; margin:0 auto;}
+#closed .en{font-size:10px; font-weight:800; letter-spacing:.3em; color:#a98bc9; margin-top:12px;}
+#closed h2{font-size:18px; color:var(--plum2); letter-spacing:.04em; line-height:1.6; margin-top:2px;}
+#closed p{font-size:12.5px; color:var(--ink); margin-top:8px; line-height:1.95;}
 #done .card{text-align:center; padding:26px 18px 22px; position:relative; overflow:hidden;}
 #done .card::before{content:""; position:absolute; left:50%; top:-60px; transform:translateX(-50%); width:320px; height:260px; border-radius:999px;
   background:radial-gradient(circle,rgba(245,166,200,.35),rgba(185,139,234,.12) 60%,rgba(255,255,255,0) 72%);}
@@ -291,6 +296,14 @@ footer{text-align:center; padding:28px 16px 80px; font-size:10.5px; color:var(--
 <div class="help"><b>困ったときは</b><br>うまく送信できない場合は、このフォームのご案内が届いたLINEに、そのままご返信ください。</div>
 </div><!-- /formArea -->
 
+<div id="closed"><div class="card">
+  <img class="chara" src="kumiko-pink-peace.webp?v=20260924a" alt="森川くみこのキャラクター" width="108" height="261">
+  <div class="en">CLOSED</div>
+  <h2>受付を締め切りました</h2>
+  <p>たくさんのお申込み、ありがとうございました。<br>定員に達したため、お申込みの受付を<br>終了させていただきました。</p>
+  <p>ご不明な点は、このフォームのご案内が届いた<br>LINEにご返信ください☺️</p>
+</div></div>
+
 <div id="done"><div class="card">
   <img class="chara" src="kumiko-pink-peace.webp?v=20260924a" alt="森川くみこのキャラクター" width="118" height="285">
   <div class="en">THANK YOU</div>
@@ -392,6 +405,10 @@ function send(payload){
       return jsonp(GAS+"?payload="+encodeURIComponent(JSON.stringify(payload)));
     });
 }
+function showClosed(){
+  $("formArea").style.display="none"; $("toast").classList.remove("on");
+  $("closed").classList.add("on"); window.scrollTo(0,0);
+}
 function showDone(d){
   $("formArea").style.display="none"; $("toast").classList.remove("on");
   var rows=[["フルネーム",d.name],["LINE名",d.lineName],["ご住所",d.address],["同行者",d.companions+"人（合計"+(d.companions+1)+"名）"]];
@@ -410,6 +427,13 @@ $("submit").addEventListener("click",function(){
   var d={action:"submit", sid:sid(), name:val("f_name"), lineName:val("f_line"), address:val("f_addr"),
     companions:compValue(), agreeCancel:true, agreeJoin:true, question:$("f_q").value.trim(), ua:navigator.userAgent.slice(0,120)};
   send(d).then(function(r){
+    if(r&&r.result==="full"){ showClosed(); return; }
+    if(r&&r.result==="over"){
+      btn.disabled=false; btn.textContent="参加を確定する";
+      toast("残りのお席が"+r.remaining+"名分です。人数を調整してお送りください");
+      $("q_comp").scrollIntoView({behavior:"smooth",block:"center"});
+      return;
+    }
     if(!r||r.result!=="ok") throw new Error((r&&r.message)||"error");
     lsSet(LS_DONE,{name:d.name,lineName:d.lineName,address:d.address,companions:d.companions,question:d.question});
     try{ localStorage.removeItem(LS_DRAFT); }catch(e){}
@@ -430,6 +454,8 @@ try{
     if(dr){ $("f_name").value=dr.name||""; $("f_line").value=dr.line||""; $("f_addr").value=dr.addr||""; $("f_q").value=dr.q||"";
       comp=(dr.comp===undefined)?null:dr.comp; $("f_more").value=dr.more||""; }
     renderComp(); update();
+    if(P.get("closed")==="1") showClosed();
+    else if(!demo) jsonp(GAS+"?action=status").then(function(r){ if(r&&r.result==="ok"&&r.open===false) showClosed(); }).catch(function(){});
   }
 }catch(e){ if(window.__log) window.__log("boot: "+e); }
 
