@@ -247,14 +247,11 @@ footer{text-align:center; padding:28px 16px 80px; font-size:10.5px; color:var(--
     </div>
     <div class="q" id="q_comp">
       <div class="lab"><span class="no">Q4</span><span>一緒に行く方の人数</span><span class="req">必須</span></div>
-      <div class="hint">ご本人は含めずにお選びください。お一人でのご参加は「0人」です</div>
+      <div class="hint">ご本人は含めずにお選びください。ご本人を含めて3名までのご参加です。お一人でのご参加は「0人」です</div>
       <div class="chips" id="chips">
         <button type="button" class="chip" data-v="0">0人<small>おひとりで</small></button>
         <button type="button" class="chip" data-v="1">1人<small>&nbsp;</small></button>
         <button type="button" class="chip" data-v="2">2人<small>&nbsp;</small></button>
-        <button type="button" class="chip" data-v="3">3人<small>&nbsp;</small></button>
-        <button type="button" class="chip" data-v="4">4人<small>&nbsp;</small></button>
-        <button type="button" class="chip" data-v="more">5人以上<small>人数を入力</small></button>
       </div>
       <div class="more" id="more"><input type="number" id="f_more" inputmode="numeric" min="5" max="20" placeholder="5"><span>人</span></div>
       <div class="total" id="total">ご本人を含めて 合計 <b id="totalN">1</b> 名でのご参加</div>
@@ -460,7 +457,7 @@ try{
   else{
     var dr=lsGet(LS_DRAFT);
     if(dr){ $("f_name").value=dr.name||""; $("f_line").value=dr.line||""; $("f_addr").value=dr.addr||""; $("f_q").value=dr.q||"";
-      comp=(dr.comp===undefined)?null:dr.comp; $("f_more").value=dr.more||""; }
+      comp=(typeof dr.comp==="number"&&dr.comp>=0&&dr.comp<=2)?dr.comp:null; $("f_more").value=dr.more||""; }
     renderComp(); update();
     if(P.get("closed")==="1") showClosed();
     else if(P.get("already")==="1") showAlready();
