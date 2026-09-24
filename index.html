@@ -66,6 +66,8 @@ h1,h2,h3,p,label,b{word-break:auto-phrase;}
   background:#fff; border:1.5px solid var(--pink); font-size:11px; font-weight:800; color:var(--plum); visibility:hidden;}
 .remain.on{visibility:visible;}
 .remain b{font-size:18px; color:var(--pinkd); line-height:1;}
+.waitno{position:relative; display:inline-block; margin-top:12px; padding:8px 20px; border-radius:16px; background:#f3edfb; border:1.5px solid #b9a1dc; color:#7a62a3; font-size:12px; font-weight:800; letter-spacing:.04em;}
+.waitno b{font-size:28px; color:#6b4fa0; margin:0 2px; line-height:1.2;}
 .remain.wait{border-color:#b9a1dc; color:#7a62a3;}
 .bubble .from{display:block; font-size:10px; font-weight:800; color:var(--pinkd); margin-top:4px; text-align:right;}
 
@@ -310,6 +312,7 @@ footer{text-align:center; padding:28px 16px 80px; font-size:10.5px; color:var(--
 <div id="done"><div class="card">
   <img class="chara" src="kumiko-pink-peace.webp?v=20260924a" alt="森川くみこのキャラクター" width="118" height="285">
   <div class="en">THANK YOU</div>
+  <div class="waitno" id="waitNo" style="display:none"></div>
   <h2 id="dnH">お申込みを受け付けました✨</h2>
   <p id="dnP">ご記入ありがとうございました。<br>当日お会いできるのを楽しみにしています。</p>
   <span class="datebadge">10月18日(日) 東京タワー</span>
@@ -401,7 +404,7 @@ function jsonp(url){
   });
 }
 function send(payload){
-  if(demo) return new Promise(function(r){ setTimeout(function(){ r({result:"ok",demo:true}); },600); });
+  if(demo) return new Promise(function(r){ setTimeout(function(){ r(mode==="wait"?{result:"ok",demo:true,mode:"wait",waitNo:3}:{result:"ok",demo:true}); },600); });
   return fetch(GAS,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)})
     .then(function(r){ return r.json(); })
     .catch(function(){ // LINE内ブラウザ等でPOSTが読めない時はJSONPで再送（sidで二重登録防止）
@@ -423,8 +426,9 @@ function setMode(m, remaining){
     R.className="remain on"; R.innerHTML="お申込み枠 残り<b>"+remaining+"</b>名";
   }
 }
-function doneText(m){
+function doneText(m, no){
   if(m==="wait"){
+    if(no){ $("waitNo").innerHTML="キャンセル待ち <b>"+no+"</b> 番"; $("waitNo").style.display="inline-block"; }
     $("dnH").textContent="キャンセル待ちで受け付けました";
     $("dnP").innerHTML="ご記入ありがとうございました。<br>お席が空いた場合は、LINEでご連絡しますね。";
   }
@@ -441,7 +445,7 @@ function showClosed(){
   $("closed").classList.add("on"); window.scrollTo(0,0);
 }
 function showDone(d){
-  doneText(d.mode);
+  doneText(d.mode, d.waitNo);
   $("formArea").style.display="none"; $("toast").classList.remove("on");
   var rows=[["フルネーム",d.name],["LINE名",d.lineName],["ご住所",d.address],["同行者",d.companions+"人（合計"+(d.companions+1)+"名）"]];
   if(d.question) rows.push(["ご質問",d.question]);
@@ -462,8 +466,8 @@ $("submit").addEventListener("click",function(){
     if(r&&r.result==="full"){ showClosed(); return; }
     if(r&&r.result==="already"){ try{ localStorage.removeItem(LS_DRAFT); }catch(e){} showAlready(); return; }
     if(!r||r.result!=="ok") throw new Error((r&&r.message)||"error");
-    d.mode=(r.mode==="wait")?"wait":"main";
-    lsSet(LS_DONE,{name:d.name,lineName:d.lineName,address:d.address,companions:d.companions,question:d.question,mode:d.mode});
+    d.mode=(r.mode==="wait")?"wait":"main"; d.waitNo=r.waitNo||null;
+    lsSet(LS_DONE,{name:d.name,lineName:d.lineName,address:d.address,companions:d.companions,question:d.question,mode:d.mode,waitNo:d.waitNo});
     try{ localStorage.removeItem(LS_DRAFT); }catch(e){}
     showDone(d);
   }).catch(function(err){
